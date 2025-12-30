@@ -1,6 +1,6 @@
 import { hex2str } from '../common/utils.ts';
 import { getRpcClient } from '../common/asyncUtils.ts';
-import { addBlock, getBlockCounter } from '../common/dbUtils.ts';
+import { addBlock, getBlockCounter, getBlockTransaction } from '../common/dbUtils.ts';
 
 const idenaNodeUrl = 'https://restricted.idena.io';
 const idenaNodeApiKey = 'idena-restricted-node-key';
@@ -22,10 +22,10 @@ if (!DEBUG) {
 export const handler = async (event: any, context: any) => {
     const rpcClientRef = { current: getRpcClient({ idenaNodeUrl, idenaNodeApiKey }) };
     const currentBlockCapturedRef = { current: 0 };
+    const previousBlockWithTxsRef = { current: 0 };
 
     const setCurrentBlockCaptured = async (currentBlock: number, previousBlockWithTxs: number, transactions: string[]) => {
         await addBlock(currentBlock, previousBlockWithTxs, transactions);
-        currentBlockCapturedRef.current = currentBlock;
         console.log('block added:', currentBlock);
     };
 
@@ -33,7 +33,10 @@ export const handler = async (event: any, context: any) => {
     const { initial, last_captured, last_captured_with_txs } = blockCounter!;
 
     let initialBlock = initial > (last_captured + 1) ? initial : last_captured + 1;
-    let previousBlockWithTxs = last_captured_with_txs;
+
+    const { transactions } = await getBlockTransaction(last_captured);
+
+    previousBlockWithTxsRef.current = transactions?.size ? last_captured : last_captured_with_txs;
 
     let recurseForwardIntervalId: NodeJS.Timeout;
     let consecutiveBlockFoundCount = 0;
@@ -61,7 +64,8 @@ export const handler = async (event: any, context: any) => {
                 }
                 
                 if (getBlockByHeightResult.transactions === null) {
-                    await setBlockCaptured(pendingBlock, previousBlockWithTxs, []);
+                    await setBlockCaptured(pendingBlock, previousBlockWithTxsRef.current, []);
+                    currentBlockCapturedRef.current = pendingBlock;
                     throw 'block found - no transactions';
                 }
 
@@ -103,10 +107,11 @@ export const handler = async (event: any, context: any) => {
                     transactions.unshift(transaction);
                 }
 
-                await setBlockCaptured(pendingBlock, previousBlockWithTxs, transactions);
+                await setBlockCaptured(pendingBlock, previousBlockWithTxsRef.current, transactions);
+                currentBlockCapturedRef.current = pendingBlock;
 
                 if (transactions.length) {
-                    previousBlockWithTxs = pendingBlock;
+                    previousBlockWithTxsRef.current = pendingBlock;
                 }
 
                 throw 'block found';
