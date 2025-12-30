@@ -3,9 +3,9 @@ import { getBlockCounter, getBlockTransaction } from "../common/dbUtils.ts";
 export const handler = async (event: any, context: any) => {
     const { queryStringParameters } = event;
 
-    const blockNumberInput = parseInt(queryStringParameters.blockNumber);
+    const blockNumberInput = parseInt(queryStringParameters?.blockNumber);
 
-    if (queryStringParameters.blockNumber && !Number.isFinite(blockNumberInput)) {
+    if (queryStringParameters?.blockNumber && !Number.isFinite(blockNumberInput)) {
         return { statusCode: 400, body: 'invalid blockNumber' };
     }
 
