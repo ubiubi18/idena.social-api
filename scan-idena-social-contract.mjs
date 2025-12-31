@@ -2,6 +2,16 @@
 /**
  * Scan contract-related tx hashes via api.idena.io (BalanceUpdates),
  * then fetch details from a local full node (bcn_txReceipt + bcn_transaction).
+ * 
+ * Run it (env vars)
+ * export IDENA_NODE_API_KEY="$(cat /YOUR/PATH/TO/YOUR/api.key)"
+ * export IDENA_NODE_URL="http://127.0.0.1:9009"
+ * node scan-idena-social-contract.mjs
+ *
+ * Optional knobs:
+ * export MAX_TX=200
+ * export PAGE_SIZE=100
+ *
  *
  * Contract hard-coded (for now):
  *   0x8d318630eB62A032d2f8073d74f05cbF7c6C87Ae
