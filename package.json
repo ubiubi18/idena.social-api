@@ -5,17 +5,9 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "index.js",
+  "main": "scan-idena-social-contract.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "devDependencies": {
-    "@types/node": "^24.10.1",
-    "esbuild": "^0.27.2",
-    "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.958.0",
-    "@aws-sdk/lib-dynamodb": "^3.958.0"
+    "check": "node --check scan-idena-social-contract.mjs && node --test",
+    "test": "node --test"
   }
 }

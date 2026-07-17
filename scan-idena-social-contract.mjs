@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { pathToFileURL } from "node:url";
+
 /**
  * Scan contract-related tx hashes via api.idena.io (BalanceUpdates),
  * then fetch details from a local full node (bcn_txReceipt + bcn_transaction).
@@ -36,16 +38,12 @@ function die(msg) {
   process.exit(1);
 }
 
-if (!NODE_KEY) {
-  die('Missing IDENA_NODE_API_KEY. Example:\nexport IDENA_NODE_API_KEY="$(cat /YOUR/PATH/TO/YOUR/api.key)"');
-}
-
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
 // Rough JS equivalent of: xxd -r -p | strings -n 6
-function extractAsciiStrings(buf, minLen = 6) {
+export function extractAsciiStrings(buf, minLen = 6) {
   const out = [];
   let start = -1;
 
@@ -73,7 +71,7 @@ function extractAsciiStrings(buf, minLen = 6) {
   return out;
 }
 
-function hexToBuf(hex) {
+export function hexToBuf(hex) {
   if (!hex) return Buffer.alloc(0);
   const h = hex.startsWith("0x") ? hex.slice(2) : hex;
   if (h.length % 2 !== 0) return Buffer.alloc(0);
@@ -146,7 +144,7 @@ async function fetchContractTxHashesDeduped() {
   return hashes;
 }
 
-function tryExtractJsonLike(strings) {
+export function tryExtractJsonLike(strings) {
   // best-effort: look for a JSON object in any extracted ascii chunk
   for (const s of strings) {
     const i = s.indexOf("{");
@@ -160,7 +158,11 @@ function tryExtractJsonLike(strings) {
   return "";
 }
 
-async function main() {
+export async function main() {
+  if (!NODE_KEY) {
+    die('Missing IDENA_NODE_API_KEY. Example:\nexport IDENA_NODE_API_KEY="$(cat /YOUR/PATH/TO/YOUR/api.key)"');
+  }
+
   console.log(`Contract: ${CONTRACT_ADDRESS}`);
   console.log(`Indexer:  ${INDEXER_BASE}`);
   console.log(`Node RPC: ${NODE_URL}`);
@@ -228,4 +230,6 @@ async function main() {
   }
 }
 
-main().catch((e) => die(String(e?.stack || e)));
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((e) => die(String(e?.stack || e)));
+}
